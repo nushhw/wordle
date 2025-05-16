@@ -5925,30 +5925,9 @@ pupal`.split("\n");
     function updateDisplay() {
     document.getElementById("loadingScreen").style.display = "flex";
 
-    setTimeout(() => {
-        const top = topGuesses(possible);
-        currentGuess = top[0].word;
-
-        document.getElementById("guessBox").textContent = currentGuess;
-        document.getElementById("entropyBox").textContent = top[0].entropy.toFixed(4);
-        updateTopWordsTable(top);
-        updateStats(top);
-
-        document.getElementById("loadingScreen").style.display = "none";
-  }, 50); // slight delay ensures screen shows before freezing JS
-}
-
-
-    document.getElementById("feedbackForm").addEventListener("submit", e => {
-      e.preventDefault();
-      const pattern = document.getElementById("feedback").value.toUpperCase().replace(/ /g, "B");
-
-      if (!/^[GYB]{5}$/.test(pattern)) {
-        alert("Invalid feedback. Use only G, Y, or B.");
-        return;
-      }
-      possible = possible.filter(w => matches(w, currentGuess, pattern));
-      if (pattern === "GGGGG") {
+    setTimeout(() => {const top = topGuesses(possible);
+        currentGuess = top[0].word;document.getElementById("guessBox").textContent = currentGuess;document.getElementById("entropyBox").textContent = top[0].entropy.toFixed(4);updateTopWordsTable(top);updateStats(top);document.getElementById("loadingScreen").style.display = "none"; }, 50); }document.getElementById("feedbackForm").addEventListener("submit", e => {e.preventDefault();
+      const pattern = document.getElementById("feedback").value.toUpperCase().replace(/ /g, "B");if (!/^[GYB]{5}$/.test(pattern)) { alert("Invalid feedback. Use only G, Y, or B.");return;}possible = possible.filter(w => matches(w, currentGuess, pattern));if (pattern === "GGGGG") {
         document.getElementById("result").textContent = "✅ Solved!";
       } else if (possible.length === 0) {
         document.getElementById("result").textContent = "❌ No possible words left!";
@@ -5961,14 +5940,7 @@ pupal`.split("\n");
 
     document.getElementById("restartBtn").addEventListener("click", () => {
       possible = [...wordlist];
-      currentGuess = "";
-      document.getElementById("feedback").value = "";
-      document.getElementById("result").textContent = "";
-      document.getElementById("statsBox").textContent = "";
-      updateDisplay();
-    });
-
-    // Initial setup
+      currentGuess = "";document.getElementById("feedback").value = "";document.getElementById("result").textContent = "";document.getElementById("statsBox").textContent = "";updateDisplay(); });
     possible = [...wordlist];
     updateDisplay();
   </script>
