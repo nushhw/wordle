@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Wordle Bot - Entropy Enhanced</title>
+  <meta charset="UTF-8" />
+  <title>Wordle Bot - Smart Input</title>
   <style>
     body {
       background: #121212;
@@ -10,7 +10,7 @@
       font-family: sans-serif;
       padding: 20px;
     }
-    h1 { color: rgb(238, 255, 0); }
+    h1 { color: #ffff00; }
     input, button {
       font-size: 18px;
       margin: 5px;
@@ -37,47 +37,64 @@
       font-size: 16px;
     }
     #loadingScreen {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: #000000;
-  color: rgb(34, 255, 0);
-  font-size: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  text-align: center;
-  line-height: 1.5;
-  font-family: 'Courier New', Courier, monospace;
-  
-}
-
-
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: #000;
+      color: #0f0;
+      font-size: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      text-align: center;
+      line-height: 1.5;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .tile {
+      width: 40px;
+      height: 40px;
+      display: inline-block;
+      text-align: center;
+      line-height: 40px;
+      font-size: 24px;
+      font-weight: bold;
+      border: 2px solid #888;
+      margin: 2px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .G { background-color: #6aaa64; color: white; }
+    .Y { background-color: #c9b458; color: white; }
+    .B { background-color: #787c7e; color: white; }
   </style>
 </head>
 <body>
   <div id="loadingScreen">
-    <div>Welcome to WordleBot by XINYUAN</div>
-  <div>🟩🟨⬛ Type G for correct, Y for yellow, and either space or B for wrong!</div>
-  <div>Calculating best starting guess...</div>
-  <div>This might take a few seconds.</div>
-    </div>
+    <div>🧠 Welcome to WordleBot</div>
+    <div>🟩🟨⬛ Click tiles to set feedback</div>
+    <div>If you used a different word, type it below</div>
+    <div>Calculating best starting guess...</div>
+  </div>
+
   <h1>XY WORDLE SOLVER</h1>
   <p>Best Guess: <span class="wordbox" id="guessBox">Loading...</span></p>
   <p>Entropy: <span id="entropyBox">...</span></p>
+
   <form id="feedbackForm">
-    <label>Feedback (e.g. BGYBB):
-      <input type="text" id="feedback" maxlength="5" required />
+    <label>If you used a different word:
+      <input type="text" id="guessUsed" maxlength="5" placeholder="(optional)" />
     </label>
-    <button type="submit">Next Guess</button>
-    <button type="button" id="restartBtn">🔄 Restart</button>
+    <div id="tiles"></div>
+    <button type="submit">Submit Feedback</button>
+    <button type="button" onclick="restart()">🔁 Restart</button>
   </form>
+
   <div id="result" class="info-box"></div>
   <div class="info-box" id="statsBox"></div>
 
-  <h3>🔢 Top 100 Candidates:</h3>
+  <h3>🔢 Top 30 Candidates:</h3>
   <table id="topWordsTable">
     <thead><tr><th>#</th><th>Word</th><th>Entropy</th></tr></thead>
     <tbody></tbody>
@@ -3977,7 +3994,6 @@ unset
 augur
 sated
 odium
-latin
 dings
 moire
 scion
@@ -5844,7 +5860,9 @@ rumba
 biffy
 pupal`.split("\n");
 
-    let possible, currentGuess;
+    let possible = [...wordlist];
+    let currentGuess = "";
+    let tileStates = ["B", "B", "B", "B", "B"];
 
     function feedbackPattern(guess, actual) {
       const result = Array(5).fill('B');
@@ -5889,17 +5907,16 @@ pupal`.split("\n");
     }
 
     function topGuesses(candidates) {
-      let scores = candidates.map(word => {
-        return { word, entropy: computeEntropy(word, candidates) };
-      });
-      scores.sort((a, b) => b.entropy - a.entropy);
-      return scores;
+      return candidates.map(word => ({
+        word,
+        entropy: computeEntropy(word, candidates)
+      })).sort((a, b) => b.entropy - a.entropy);
     }
 
     function updateTopWordsTable(top) {
       const tbody = document.querySelector("#topWordsTable tbody");
       tbody.innerHTML = "";
-      for (let i = 0; i < Math.min(top.length, 100); i++) {
+      for (let i = 0; i < Math.min(top.length, 30); i++) {
         const row = document.createElement("tr");
         row.innerHTML = `<td>${i+1}</td><td>${top[i].word}</td><td>${top[i].entropy.toFixed(3)}</td>`;
         tbody.appendChild(row);
@@ -5915,35 +5932,86 @@ pupal`.split("\n");
       }
       const avg = sum / top.length;
       document.getElementById("statsBox").innerHTML = `
-        <b>Total Candidates:</b> ${top.length} &nbsp;&nbsp;
-        <b>Average Entropy:</b> ${avg.toFixed(3)} &nbsp;&nbsp;
-        <b>Min:</b> ${min.toFixed(3)} &nbsp;&nbsp;
+        <b>Total:</b> ${top.length} &nbsp;
+        <b>Avg:</b> ${avg.toFixed(3)} &nbsp;
+        <b>Min:</b> ${min.toFixed(3)} &nbsp;
         <b>Max:</b> ${max.toFixed(3)}
       `;
     }
 
     function updateDisplay() {
-    document.getElementById("loadingScreen").style.display = "flex";
+      document.getElementById("loadingScreen").style.display = "flex";
+      setTimeout(() => {
+        const top = topGuesses(possible);
+        currentGuess = top[0].word;
+        document.getElementById("guessBox").textContent = currentGuess;
+        document.getElementById("entropyBox").textContent = top[0].entropy.toFixed(4);
+        updateTopWordsTable(top);
+        updateStats(top);
+        document.getElementById("loadingScreen").style.display = "none";
+      }, 50);
+    }
 
-    setTimeout(() => {const top = topGuesses(possible);
-        currentGuess = top[0].word;document.getElementById("guessBox").textContent = currentGuess;document.getElementById("entropyBox").textContent = top[0].entropy.toFixed(4);updateTopWordsTable(top);updateStats(top);document.getElementById("loadingScreen").style.display = "none"; }, 50); }document.getElementById("feedbackForm").addEventListener("submit", e => {e.preventDefault();
-      const pattern = document.getElementById("feedback").value.toUpperCase().replace(/ /g, "B");if (!/^[GYB]{5}$/.test(pattern)) { alert("Invalid feedback. Use only G, Y, or B.");return;}possible = possible.filter(w => matches(w, currentGuess, pattern));if (pattern === "GGGGG") {
-        document.getElementById("result").textContent = "✅ Solved!";
-      } else if (possible.length === 0) {
-        document.getElementById("result").textContent = "❌ No possible words left!";
-      } else {
-        updateDisplay();
-        document.getElementById("result").textContent = `Remaining: ${possible.length} possible words.`;
+    function renderTiles() {
+      const container = document.getElementById("tiles");
+      container.innerHTML = "";
+      for (let i = 0; i < 5; i++) {
+        const tile = document.createElement("div");
+        tile.className = `tile ${tileStates[i]}`;
+        tile.textContent = i + 1;
+        tile.onclick = () => {
+          tileStates[i] = nextColor(tileStates[i]);
+          renderTiles();
+        };
+        container.appendChild(tile);
       }
-      document.getElementById("feedback").value = "";
-    });
+    }
 
-    document.getElementById("restartBtn").addEventListener("click", () => {
+    function nextColor(c) {
+      return c === "B" ? "Y" : c === "Y" ? "G" : "B";
+    }
+
+    function restart() {
       possible = [...wordlist];
-      currentGuess = "";document.getElementById("feedback").value = "";document.getElementById("result").textContent = "";document.getElementById("statsBox").textContent = "";updateDisplay(); });
-    possible = [...wordlist];
-    updateDisplay();
+      tileStates = ["B", "B", "B", "B", "B"];
+      document.getElementById("guessUsed").value = "";
+      document.getElementById("result").textContent = "";
+      document.getElementById("statsBox").textContent = "";
+      updateDisplay();
+      renderTiles();
+    }
+
+    document.getElementById("feedbackForm").addEventListener("submit", e => {
+        e.preventDefault();
+        const inputGuess = document.getElementById("guessUsed").value.trim().toLowerCase();
+        const usedGuess = inputGuess.length === 5 ? inputGuess : currentGuess;
+        const pattern = tileStates.join("");
+
+        if (!/^[a-z]{5}$/.test(usedGuess)) {
+            alert("Please enter a valid 5-letter word.");
+            return;
+        }
+
+        possible = possible.filter(w => matches(w, usedGuess, pattern));
+
+        if (pattern === "GGGGG") {
+            document.getElementById("result").textContent = "✅ Solved!";
+        } else if (possible.length === 0) {
+            document.getElementById("result").textContent = "❌ No matches left!";
+        } else {
+            document.getElementById("result").textContent = `Remaining: ${possible.length}`;
+            updateDisplay();
+        }
+
+        tileStates = ["B", "B", "B", "B", "B"];
+        renderTiles();
+        document.getElementById("guessUsed").value = ""; // ✅ Clear the input box
+        });
+
+    window.onload = () => {
+      renderTiles();
+      updateDisplay();
+    };
   </script>
 </body>
-
 </html>
